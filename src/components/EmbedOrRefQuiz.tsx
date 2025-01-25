@@ -1,6 +1,6 @@
 'use client'
 
-import React, {  useState ,useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 
@@ -10,87 +10,93 @@ const questions = [
     question: "Would keeping the pieces of information together lead to a simpler data model and code?",
     embedLabel: "Yes",
     referenceLabel: "No",
+    explanation: "A simpler data model reduces development time, makes maintenance easier, and minimizes bugs. For example, in a blog application, embedding comments within posts can simplify the code since you don't need separate queries to fetch related data."
   },
   {
     id: "goTogether",
     question: 'Do the pieces of information have a "has-a," "contains," or similar relationship?',
     embedLabel: "Yes",
     referenceLabel: "No",
+    explanation: "The type of relationship between data affects how it should be stored. For instance, a user's address is a 'has-a' relationship and is often embedded, while a user's orders might be referenced since they're more independent entities."
   },
   {
     id: "queryAtomicity",
     question: "Does the application query the pieces of information together?",
     embedLabel: "Yes",
     referenceLabel: "No",
+    explanation: "If data is frequently queried together, embedding can improve performance by reducing the number of database operations. For example, if you always need product details with its reviews, embedding reviews within the product document makes sense."
   },
   {
     id: "updateComplexity",
     question: "Are the pieces of information updated together?",
     embedLabel: "Yes",
     referenceLabel: "No",
+    explanation: "Data that's updated together benefits from embedding as it ensures atomic updates. For instance, if a user's profile and settings are always updated simultaneously, embedding settings within the user document maintains data consistency."
   },
   {
     id: "archival",
     question: "Should the pieces of information be archived at the same time?",
     embedLabel: "Yes",
     referenceLabel: "No",
+    explanation: "Data lifecycle management is crucial. If related data should be archived together (like a project and its tasks), embedding simplifies the archival process and maintains data integrity."
   },
   {
     id: "cardinality",
     question: "Is there a high cardinality (current or growing) in the child side of the relationship?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "High cardinality relationships (like a product with thousands of reviews) are better suited for referencing to avoid document size limits and performance issues when updating large arrays."
   },
   {
     id: "dataDuplication",
     question: "Would data duplication be too complicated to manage and undesired?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "Data duplication can lead to inconsistencies and increased storage costs. For example, if customer information is used across multiple orders, referencing prevents the need to update the same data in multiple places."
   },
   {
     id: "documentSize",
-    question:
-      "Would the combined size of the pieces of information take too much memory or transfer bandwidth for the application?",
+    question: "Would the combined size of the pieces of information take too much memory or transfer bandwidth for the application?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "MongoDB has a 16MB document size limit. Large embedded arrays or nested objects can hit this limit and affect performance. For instance, a social media post with thousands of comments might be better with referenced comments."
   },
   {
     id: "documentGrowth",
     question: "Would the embedded piece grow without bound?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "Unbounded growth can lead to performance issues and hit document size limits. For example, a chat application's message history should typically be referenced rather than embedded within a conversation document."
   },
   {
     id: "workload",
     question: "Are the pieces of information written at different times in a write-heavy workload?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "Frequent updates to embedded documents can cause document-level locking and concurrency issues. In a real-time analytics system, separate collections might perform better for high-frequency updates."
   },
   {
     id: "individuality",
     question: "For the children side of the relationship, can the pieces exist by themselves without a parent?",
     embedLabel: "No",
     referenceLabel: "Yes",
+    explanation: "Independent entities often benefit from referencing. For example, users can exist without orders, so they're typically separate collections, while a user's address details make more sense embedded as they're meaningless without the user."
   },
 ]
 
-
 const EmbedOrRefQuiz = () => {
-
-  const totalQuestions                = questions.length
+  const totalQuestions = questions.length
   const [showResults, setShowResults] = useState(false);
-  const resultsRef                    = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [expandedExplanation, setExpandedExplanation] = useState<string | null>(null);
   
-  const [embedCount, setEmbedCount]         = useState(0);
+  const [embedCount, setEmbedCount] = useState(0);
   const [referenceCount, setReferenceCount] = useState(0);
-  const [answers, setAnswers]               = useState<{[key: string]: string}>({});
+  const [answers, setAnswers] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
-    //console.log("Embed count:", embedCount, "Reference count:", referenceCount);
-    //console.log("Answers:", Object.keys(answers).length);
     if(Object.keys(answers).length === totalQuestions){
       setShowResults(true);
-      // Scroll to results after a short delay to ensure the results section is rendered
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -100,17 +106,13 @@ const EmbedOrRefQuiz = () => {
   const handleAnswer = (id: string, embedLabel: string, referenceLabel: string, answer: string) => {
     const previousAnswer = answers[id];
 
-    //console.log("Previous answer:", previousAnswer);
-    
     if(!previousAnswer){
-      /*first answer*/
       if(answer === embedLabel){
         setEmbedCount(embedCount + 1);
       }else if(answer === referenceLabel){
         setReferenceCount(referenceCount + 1);
       }
     }else if (previousAnswer !== answer) {
-      // Changed answer for this question
       if (previousAnswer === embedLabel) {
         setEmbedCount(embedCount - 1);
       } else if (previousAnswer === referenceLabel) {
@@ -124,8 +126,6 @@ const EmbedOrRefQuiz = () => {
     }
 
     setAnswers({...answers, [id]: answer});
-
-    
   }
     
   return (
@@ -164,6 +164,8 @@ const EmbedOrRefQuiz = () => {
                         const question = q.question;
                         const embedLabel = q.embedLabel;
                         const referenceLabel = q.referenceLabel;
+                        const explanation = q.explanation;
+                        const isExpanded = expandedExplanation === id;
 
                         const selectedAnswer = answers[id];
 
@@ -176,12 +178,39 @@ const EmbedOrRefQuiz = () => {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-xl text-center text-slate-300 px-4">
+                                        <p className="text-xl text-center text-slate-300 px-4 mb-4">
                                             {question}
                                         </p>
-                                        <div className="flex justify-center gap-4 pt-4">
-                                            <button onClick={() => handleAnswer(id, embedLabel, referenceLabel, 'Yes')} className={`px-6 py-3 ${selectedAnswer === 'Yes' ? 'bg-[var(--mongodb-dark-green)]' : 'bg-slate-700'} text-white rounded-lg font-semibold hover:bg-[var(--mongodb-dark-green)] transition-colors duration-300`}>Yes</button>
-                                            <button onClick={() => handleAnswer(id, embedLabel, referenceLabel, 'No')} className={`px-6 py-3 ${selectedAnswer === 'No' ? 'bg-[var(--mongodb-dark-green)]' : 'bg-slate-700'} text-white rounded-lg font-semibold hover:bg-[var(--mongodb-dark-green)] transition-colors duration-300`}>No</button>
+                                        <div className="flex flex-col items-center gap-4">
+                                            <button
+                                                onClick={() => setExpandedExplanation(isExpanded ? null : id)}
+                                                className="text-sm text-[var(--mongodb-light-green)] hover:text-[var(--mongodb-green)] transition-colors duration-1000"
+                                            >
+                                                {isExpanded ? "Hide explanation" : "Why this matters?"}
+                                            </button>
+                                            <div 
+                                                className={`overflow-hidden transition-all duration-600 ease-in-out ${
+                                                    isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                                                }`}
+                                            >
+                                                <div className="text-slate-300 text-sm bg-slate-700/50 p-4 rounded-lg transform transition-transform duration-1000 ease-in-out">
+                                                    {explanation}
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-center gap-4 pt-4">
+                                                <button 
+                                                    onClick={() => handleAnswer(id, embedLabel, referenceLabel, 'Yes')} 
+                                                    className={`px-6 py-3 ${selectedAnswer === 'Yes' ? 'bg-[var(--mongodb-dark-green)]' : 'bg-slate-700'} text-white rounded-lg font-semibold hover:bg-[var(--mongodb-dark-green)] transition-colors duration-300`}
+                                                >
+                                                    Yes
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleAnswer(id, embedLabel, referenceLabel, 'No')} 
+                                                    className={`px-6 py-3 ${selectedAnswer === 'No' ? 'bg-[var(--mongodb-dark-green)]' : 'bg-slate-700'} text-white rounded-lg font-semibold hover:bg-[var(--mongodb-dark-green)] transition-colors duration-300`}
+                                                >
+                                                    No
+                                                </button>
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
