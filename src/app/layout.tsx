@@ -14,12 +14,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background min-h-screen">
       <head>
         <link rel="icon" href="/fav.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} bg-background min-h-screen`}>{children}</body>
     </html>
   )
 }
